@@ -109,12 +109,39 @@ describe('springen', () => {
     expect(s.ends('jump')).toBe(1);
   });
 
+  it('vangt een afgevlakte afzet op via de hoogte-route', () => {
+    const s = new Sim();
+    s.engine.thresholds.jumpOnDip = false;
+    s.calibrate();
+    s.still(10);
+    // Zoals MediaPipe een afzet afvlakt: 1.2 romphoogte/s omhoog (onder de afzetdrempel van 1.5) tot 0.4 romphoogte hoog.
+    s.moveTo({ hip: HIP + 0.4 * TORSO, shoulder: SHOULDER + 0.4 * TORSO }, 10);
+    expect(s.starts('jump')).toBe(1);
+    expect(s.engine.lastJumpRoute).toBe('hoogte');
+    s.moveTo({ hip: HIP, shoulder: SHOULDER }, 10);
+    s.still(5);
+    expect(s.ends('jump')).toBe(1);
+  });
+
+  it('herkalibreert automatisch als je stil blijft staan buiten het bereik van de baseline', () => {
+    const s = new Sim();
+    s.calibrate();
+    // Ga 0.7 romphoogte hoger staan (bv. camera lager gezet) en blijf stil: eerst "in de lucht zonder trigger", na 1,5 s herkalibratie.
+    s.moveTo({ hip: HIP + 0.7 * TORSO, shoulder: SHOULDER + 0.7 * TORSO }, 30);
+    s.still(30);
+    expect(s.engine.status.kind).toBe('tracking');
+    s.still(60);
+    expect(s.engine.status.kind).toBe('tracking');
+    expect(s.engine.baseline?.hipY).toBeCloseTo(HIP + 0.7 * TORSO, 3);
+    expect(s.starts('jump')).toBe(0);
+  });
+
   it('negeert een trage beweging omhoog (rechtkomen)', () => {
     const s = new Sim();
     s.engine.thresholds.jumpOnDip = false;
     s.calibrate();
-    // 0.5 romphoogte/s omhoog: onder de drempel van 1.5.
-    s.moveTo({ hip: HIP + 0.05 * TORSO, shoulder: SHOULDER + 0.05 * TORSO }, 3);
+    // 0.5 romphoogte/s omhoog tot 0.2 romphoogte boven de baseline: onder de afzetdrempel (1.5) én onder de hoogte-route (1.1).
+    s.moveTo({ hip: HIP + 0.2 * TORSO, shoulder: SHOULDER + 0.2 * TORSO }, 12);
     s.still(5);
     expect(s.starts('jump')).toBe(0);
   });

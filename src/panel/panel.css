@@ -73,6 +73,7 @@ body { display: flex; align-items: center; justify-content: center; }
 .btn.primary.stop { background: var(--red); }
 .btn.icon { width: 30px; padding: 6px 0; text-align: center; }
 .btn.small { padding: 3px 8px; font-size: 11px; background: rgba(0, 0, 0, 0.7); }
+.stats { font-size: 10px; opacity: 0.7; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #888; flex: none; }
 .dot.on { background: var(--green); }
 

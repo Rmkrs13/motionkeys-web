@@ -15,7 +15,9 @@ Het paneel toont het gespiegelde camerabeeld, groene dots op je gewrichten, de l
 **Kalibreer** meet je referentiepositie opnieuw (midden, heuphoogte en romphoogte); doe dat als je ergens
 anders bent gaan staan of als de drempellijnen niet meer rond je staan. Bij Start en na verlies van tracking
 gebeurt dit automatisch. Met **⧉** maak je van het paneel een zwevend venster dat altijd bovenop blijft
-(Document Picture-in-Picture).
+(Document Picture-in-Picture), ook over een spel in volledig scherm. In de instellingen kun je het paneel ook als
+**zijpaneel van Chrome** laten openen (naast de pagina, in hetzelfde venster); in volledig scherm verbergt Chrome
+het zijpaneel, dus kies dan het zwevende venster.
 
 Dit is de herschrijving van de macOS-app [Rmkrs13/motionkeys](https://github.com/Rmkrs13/motionkeys)
 (Swift, Vision, CGEvent) naar het web: pose-detectie met [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker/web_js)
@@ -40,7 +42,7 @@ npm run typecheck
 ```
 
 Daarna in Chrome: `chrome://extensions` → **Ontwikkelaarsmodus** aan → **Uitgepakte extensie laden** → kies de map `dist/`.
-Na een nieuwe build klik je daar op het herlaad-icoon van de extensie. Vereist Chrome 116 of nieuwer (ook op Windows).
+Na een nieuwe build klik je daar op het herlaad-icoon van de extensie (anders blijft de oude service worker draaien). Vereist Chrome 116 of nieuwer (ook op Windows).
 
 ## Gebruik
 
@@ -61,6 +63,7 @@ chrome://-pagina is of niet meer bestaat.
 | Camera | wordt gevraagd bij de eerste Start, in het paneelvenster |
 | `storage` | instellingen bewaren |
 | `tabs`, host `<all_urls>`, `scripting` | het spel-tabblad vinden en er het content script in laden dat de toetsen aflevert |
+| `sidePanel` | het paneel optioneel als zijpaneel openen |
 | `debugger` | voor **Betrouwbare toetsen**; Chrome laat deze permissie niet optioneel toe, dus ze staat vast in het manifest. Ze wordt alleen gebruikt als je die optie aanzet |
 
 Toegankelijkheidsrechten (zoals de macOS-app nodig had) zijn niet nodig.
@@ -71,7 +74,7 @@ Klik op het tandwiel in het paneel. Daar kies je een modus (preset) of stel je p
 
 | Beweging | Herkenning |
 |---|---|
-| Springen | dip vóór de afzet (anticipatie) of snelle afzet (heupen/schouders > 1.5 romphoogte/s omhoog; strenger na een landing, buk of stap) |
+| Springen | dip vóór de afzet (anticipatie) of snelle afzet (heupen/schouders > 1.5 romphoogte/s omhoog; strenger na een landing, buk of stap), of als vangnet de hoogte-route: heupen én schouders al > 0.08 romphoogte boven de baseline en nog stijgend met > 1.1 romphoogte/s |
 | Bukken | heupen of schouders > 0.4 × romphoogte onder de baseline, of > 0.3 gedurende 0,15 s (niet tijdens een stap of vlak na een landing) |
 | Stap links / rechts | zijwaartse beweging > 0.35 romphoogte/s die al in het vorige frame bezig was (geen glitch), of trage stap > 0.3 × romphoogte t.o.v. je laatste rustpositie; na elke stap wordt waar je stilstaat de nieuwe referentie, en een grote stap (≥ 0.9 romphoogte, een gewone stap is 0.3–0.8) telt als twee |
 
@@ -89,7 +92,8 @@ Klik op het tandwiel in het paneel. Daar kies je een modus (preset) of stel je p
   (`Input.dispatchKeyEvent`): echte toetsaanslagen met `isTrusted === true`, maar Chrome toont dan tijdens het
   tracken de balk "MotionKeys heeft foutopsporing gestart in deze browser". Klik je daar op *Annuleren*, dan valt
   de extensie terug op synthetische toetsen.
-- Instellingen staan in `chrome.storage.local` (`keyMapping`, `sensitivity`, `cameraId`, `keyDelivery`) en worden
+- **Weergave**: zwevend venster (standaard) of zijpaneel van Chrome.
+- Instellingen staan in `chrome.storage.local` (`keyMapping`, `sensitivity`, `cameraId`, `keyDelivery`, `panelMode`) en worden
   live toegepast, ook terwijl je trackt.
 
 ## Camera kiezen
@@ -98,6 +102,36 @@ In de instellingen staat bovenaan een camerakeuze: automatisch (standaardcamera)
 verschijnen zodra ze aangesloten zijn ("Vernieuwen" als dat niet vanzelf gebeurt; namen zijn pas zichtbaar nadat de
 camera één keer toegestaan is). Wisselen kan tijdens het tracken; de extensie kalibreert dan opnieuw. De extensie
 vraagt 640×480 en bij voorkeur 60 fps (minder vertraging).
+
+## Hoe een sprong gemeten wordt
+
+Bij de kalibratie (±1 s stilstaan) onthoudt de engine je heup- en schouderhoogte en je romphoogte *h*
+(schouders → heupen). Alles daarna is in veelvouden van *h*, zodat de afstand tot de camera niet uitmaakt. Een sprong
+kan via drie routes, in volgorde van snelheid:
+
+1. **Dip**: heupen én schouders zakken sneller dan 0.6 *h*/s terwijl je net nog stilstond. De toets gaat dan al
+   ±250 ms vóór de afzet. Alleen actief als *Sprong anticiperen* aan staat **en bukken geen toets heeft**
+   (de modus *Dino snel*); met bukken aan zou elke buk een sprong zijn.
+2. **Afzet**: heupen óf schouders stijgen over de laatste 2 frames (±66 ms) sneller dan 1.5 *h*/s
+   (2.2 kort na een landing, tijdens een buk of een stap opzij).
+3. **Hoogte** (vangnet): heupen én schouders zitten al > 0.08 *h* boven de baseline en stijgen nog > 1.1 *h*/s.
+   MediaPipe vlakt landmarks af, waardoor een afzet trager "lijkt" dan hij is; zonder deze route stond de engine dan
+   wel "in de lucht" maar verstuurde geen toets.
+
+In de console van het paneel wordt elk frame met een stijgsnelheid > 0.8 *h*/s gelogd (`vHip`, `vSh` in *h*/s). Haalt
+een echte sprong bij jou maar 1.0–1.4, zet dan de gevoeligheid *Springen* hoger (150 % deelt alle drempels door 1.5),
+of kies *Dino snel* voor de dip-anticipatie. Onderaan het paneel staan de gemeten framerate en pose-tijd; onder
+±25 fps worden snelheden over een langer venster gemeten en dus lager.
+
+## Automatisch herkalibreren
+
+- Verlies van het lichaam (> 1 s geen pose) → status *Geen lichaam gevonden*; zodra je weer in beeld bent start de
+  kalibratie vanzelf opnieuw (±1 s).
+- Sta je ≥ 1,5 s stil terwijl de baseline duidelijk niet meer past (romphoogte > 25 % anders, heupen én schouders
+  > 0.5 *h* boven of onder de baseline, of de engine denkt nog "in de lucht" te zijn na een gemiste landing), dan
+  herkalibreert de engine zelf. Kleine verschuivingen (gebogen speelhouding, iets dichter bij de camera) volgt de
+  baseline al zonder herkalibratie.
+- **Kalibreer** blijft beschikbaar om het meteen te doen.
 
 ## Gevoeligheid aanpassen
 

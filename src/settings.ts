@@ -4,12 +4,16 @@ import type { ActionBinding, KeyMapping, Sensitivity } from './engine/key-mappin
 /// Hoe toetsen bij het spel aankomen: synthetische KeyboardEvents via het content script, of echte toetsen via chrome.debugger.
 export type KeyDelivery = 'content' | 'debugger';
 
+/// Waar het paneel opent: eigen zwevend venster, of het zijpaneel van Chrome.
+export type PanelMode = 'window' | 'sidepanel';
+
 export interface Settings {
   mapping: KeyMapping;
   sensitivity: Sensitivity;
   /// deviceId van de gekozen camera; leeg = standaardcamera.
   cameraId: string;
   keyDelivery: KeyDelivery;
+  panelMode: PanelMode;
 }
 
 export const defaultSettings = (): Settings => ({
@@ -17,9 +21,10 @@ export const defaultSettings = (): Settings => ({
   sensitivity: defaultSensitivity(),
   cameraId: '',
   keyDelivery: 'content',
+  panelMode: 'window',
 });
 
-const KEYS: (keyof Settings)[] = ['mapping', 'sensitivity', 'cameraId', 'keyDelivery'];
+const KEYS: (keyof Settings)[] = ['mapping', 'sensitivity', 'cameraId', 'keyDelivery', 'panelMode'];
 
 function sanitizeBinding(raw: unknown, fallback: ActionBinding): ActionBinding {
   const r = raw as Partial<ActionBinding> | undefined;
@@ -46,6 +51,7 @@ function sanitize(raw: Partial<Record<keyof Settings, unknown>>): Settings {
     sensitivity: { jump: clamp(s.jump, 1), duck: clamp(s.duck, 1), lateral: clamp(s.lateral, 1) },
     cameraId: typeof raw.cameraId === 'string' ? raw.cameraId : '',
     keyDelivery: raw.keyDelivery === 'debugger' ? 'debugger' : 'content',
+    panelMode: raw.panelMode === 'sidepanel' ? 'sidepanel' : 'window',
   };
 }
 

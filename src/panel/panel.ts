@@ -25,6 +25,7 @@ const toggleBtn = $<HTMLButtonElement>('toggle');
 const recalibrateBtn = $<HTMLButtonElement>('recalibrate');
 const pipBtn = $<HTMLButtonElement>('pip');
 const dot = $<HTMLSpanElement>('dot');
+const statsEl = $<HTMLSpanElement>('stats');
 const targetSelect = $<HTMLSelectElement>('target');
 
 const controller = new TrackingController(video);
@@ -66,6 +67,7 @@ function render(): void {
   toggleBtn.disabled = st.starting;
   recalibrateBtn.disabled = !st.isTracking;
   dot.classList.toggle('on', st.isTracking);
+  statsEl.textContent = st.isTracking ? st.stats ?? '' : '';
 
   if (st.isTracking) drawOverlay(canvas, st.joints, st.lateralLines);
 }

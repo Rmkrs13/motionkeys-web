@@ -29,6 +29,8 @@ export interface TrackingState {
   /// Waarschuwing over de toetslevering (debugger geweigerd/losgekoppeld).
   deliveryWarning: string | undefined;
   keyDelivery: KeyDelivery;
+  /// Gemeten framerate en pose-tijd (voor het paneel), bijgewerkt elke 30 frames.
+  stats: string | undefined;
 }
 
 /// URL's waar geen content script of debugger in kan.
@@ -38,7 +40,7 @@ export class TrackingController {
   readonly state: TrackingState = {
     isTracking: false, starting: false, status: { kind: 'idle' }, lateral: 'center', lateralLines: undefined,
     joints: {}, flash: undefined, error: undefined, cameraDenied: false, targetWarning: undefined,
-    deliveryWarning: undefined, keyDelivery: 'content',
+    deliveryWarning: undefined, keyDelivery: 'content', stats: undefined,
   };
   onChange: () => void = () => {};
   /// Vast gekozen doel-tabblad; undefined = automatisch (laatst actieve tab).
@@ -53,6 +55,7 @@ export class TrackingController {
   private heldKeys = new Map<string, KeyInfo>();
   private frameHandle: number | undefined;
   private frameCounter = 0;
+  private statsWindow = { since: 0, poseMs: 0 };
   private flashTimer: number | undefined;
   private autoTabId: number | undefined;
   private readonly video: HTMLVideoElement;
@@ -207,6 +210,7 @@ export class TrackingController {
     }
     this.engine.reset();
     this.frameCounter = 0;
+    this.statsWindow = { since: performance.now(), poseMs: 0 };
     this.state.isTracking = true;
     this.state.starting = false;
     this.state.status = { kind: 'idle' };
@@ -225,6 +229,7 @@ export class TrackingController {
     this.engine.reset();
     Object.assign(this.state, {
       isTracking: false, starting: false, status: { kind: 'idle' }, lateral: 'center', lateralLines: undefined, joints: {}, flash: undefined,
+      stats: undefined,
     });
     this.onChange();
   }
@@ -267,11 +272,18 @@ export class TrackingController {
     const t2 = performance.now();
 
     this.frameCounter++;
+    this.statsWindow.poseMs += t1 - t0;
+    if (this.frameCounter % 30 === 0) {
+      const elapsed = (t2 - this.statsWindow.since) / 1000;
+      this.state.stats = `${(30 / elapsed).toFixed(0)} fps · pose ${(this.statsWindow.poseMs / 30).toFixed(0)} ms`;
+      this.statsWindow = { since: t2, poseMs: 0 };
+    }
+    // Kandidaat-sprongen (stijgsnelheid > 0.8 romphoogte/s) altijd loggen: zo zie je welke snelheid een echte afzet haalt.
+    if (events.length > 0 || this.engine.riseVelocity > 0.8) console.debug('[MotionKeys] ' + this.engine.trace);
     if (events.length > 0 || this.frameCounter % 60 === 0) {
       const cameraMs = metadata.captureTime !== undefined ? t0 - metadata.captureTime : NaN;
       const text = events.length ? ` [${events.map(describe).join(',')}${events.some((e) => e.action === 'jump' && e.phase === 'start') ? ` via ${this.engine.lastJumpRoute}` : ''}]` : '';
       console.debug(`[MotionKeys] camera→app ${cameraMs.toFixed(0)} ms, pose ${(t1 - t0).toFixed(0)} ms, totaal ${(t2 - t0).toFixed(0)} ms${text}`);
-      if (events.length) console.debug('[MotionKeys] ' + this.engine.trace);
     }
 
     const mirrored: Joints = {};

@@ -1,5 +1,5 @@
 // Service worker: opent het paneelvenster, houdt bij welk tabblad het spel is en ruimt op als het paneel sluit.
-import { SESSION_KEYS } from './settings';
+import { loadSettings, onSettingsChange, SESSION_KEYS } from './settings';
 
 const PANEL_WIDTH = 420;
 const PANEL_HEIGHT = 360;
@@ -53,7 +53,18 @@ async function detachAllDebuggers(): Promise<void> {
   }
 }
 
-chrome.action.onClicked.addListener(() => { void openPanel(); });
+/// Zijpaneel-modus: Chrome opent het zijpaneel zelf bij een klik op het icoon; anders openen wij het venster.
+async function applyPanelMode(): Promise<void> {
+  const { panelMode } = await loadSettings();
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: panelMode === 'sidepanel' });
+  console.debug('[MotionKeys] paneelmodus:', panelMode);
+}
+void applyPanelMode();
+onSettingsChange(() => { void applyPanelMode().catch((e) => console.error('[MotionKeys] paneelmodus instellen mislukt', e)); });
+
+chrome.action.onClicked.addListener(() => {
+  void loadSettings().then((s) => { if (s.panelMode === 'window') return openPanel(); });
+});
 
 chrome.tabs.onActivated.addListener(({ windowId }) => { void rememberGameTab(windowId); });
 chrome.windows.onFocusChanged.addListener((windowId) => { void rememberGameTab(windowId); });

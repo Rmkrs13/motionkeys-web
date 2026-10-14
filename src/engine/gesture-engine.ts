@@ -23,6 +23,7 @@ export class Thresholds {
   jumpEnter = 0.08;                  // heupen of schouders > 0.08 × romphoogte boven baseline → "in de lucht"
   jumpVelocity = 1.5;                // heupen of schouders stijgen sneller dan 1.5 × romphoogte per seconde (afzet; echte afzet haalt 3–5; rechtkomen/stappen halen ≤ 1.7 maar vallen in de strenge vensters)
   jumpMinRise = 0.02;                // … en minstens 0.02 × romphoogte in dat venster (ruisfilter)
+  jumpHighVelocity = 0.75;           // hoogte-route (vangnet): heupen én schouders boven jumpEnter en stijgend met minstens 0.75 × de afzetdrempel (MediaPipe vlakt een afzet af, waardoor de snelheidsdrempel soms pas gehaald wordt als je al "hoog" bent)
   jumpVelocityAfterLanding = 2.2;    // strengere afzetdrempel kort na een landing, tijdens/na bukken en bij een stap opzij: veer/rechtkomen haalt ±1.7, een echte afzet 3+
   landingStrict = 0.6;               // hoe lang die strengere drempel geldt en de dip-anticipatie uit staat na een landing
   pendingTimeout = 0.6;              // na een verstuurde spatie: hoe lang we op de afzet wachten voor we weer klaar staan (valse dip)
@@ -47,6 +48,9 @@ export class Thresholds {
   baselineAlpha = 0.03;              // aanpassing van de hoogte-baseline in rust (volgt een gebogen speelhouding in ±1–2 s)
   baselineMaxShift = 0.35;           // … zolang je minder dan 0.35 × romphoogte onder/boven de baseline staat (een buk wordt niet gevolgd)
   bodyLostTimeout = 1.0;
+  recalibrateTorsoDrift = 0.25;      // automatische herkalibratie: romphoogte wijkt > 25 % af van de baseline (dichter/verder gaan staan) …
+  recalibrateHeightDrift = 0.5;      // … of heupen én schouders > 0.5 × romphoogte boven/onder de baseline (camera verplaatst, gaan zitten) …
+  recalibrateHold = 1.5;             // … en dat terwijl je minstens zo lang stilstaat
 
   /// Drempels geschaald met de gevoeligheid uit de instellingen (factor > 1 = drempels lager = gevoeliger).
   static scaled(s: Sensitivity): Thresholds {
@@ -129,6 +133,8 @@ export class GestureEngine {
   lastJumpRoute = '';
   /// Meetspoor van het laatste frame (voor het debug-log).
   trace = '';
+  /// Grootste stijgsnelheid (heupen of schouders) in het laatste frame, in romphoogtes/s (voor het log).
+  riseVelocity = 0;
 
   private samples: BodyMetrics[] = [];
   private hipHistory: Sample[] = [];
@@ -152,6 +158,8 @@ export class GestureEngine {
   private lastLandingTime = -Infinity;
   private lastBodyTime: number | undefined;
   private bodyLost = false;
+  /// Sinds wanneer je stil buiten het bereik van de baseline staat (voor automatische herkalibratie).
+  private driftSince: number | undefined;
 
   /// Gespiegelde, genormaliseerde x-posities van de links/rechts-drempels (voor de overlay).
   get lateralLines(): { left: number; right: number } | undefined {
@@ -178,6 +186,7 @@ export class GestureEngine {
     this.lastLandingTime = -Infinity;
     this.lastBodyTime = undefined;
     this.bodyLost = false;
+    this.driftSince = undefined;
   }
 
   process(frame: PoseFrame | undefined, time: number): GestureEvent[] {
@@ -223,6 +232,7 @@ export class GestureEngine {
     this.lowSince = undefined;
     this.duckRecoverSince = undefined;
     this.lastLandingTime = -Infinity;
+    this.driftSince = undefined;
     this.status = { kind: 'calibrating', progress: 0 };
   }
 
@@ -350,6 +360,7 @@ export class GestureEngine {
     };
     const hip = rise(this.hipHistory), shoulder = rise(this.shoulderHistory);
     const windowVelocity = Math.max(hip.velocity, shoulder.velocity);
+    this.riseVelocity = windowVelocity / h;
     const windowRise = hip.velocity >= shoulder.velocity ? hip.rise : shoulder.rise;
     const isHigh = dy > t.jumpEnter * h || dyShoulder > t.jumpEnter * h;
     const isLow = dy < t.jumpExit * h && dyShoulder < t.jumpExit * h;
@@ -369,8 +380,7 @@ export class GestureEngine {
         }
         break;
       case 'ground':
-        if (isHigh && time - this.lastLandingTime > t.landingStrict) this.jumpState = { kind: 'airborne' };  // sprong zonder trigger (bv. heel traag)
-        break;
+        break;   // zie onder: eerst de triggercheck, dan pas "in de lucht zonder trigger"
     }
 
     // Streng (alleen een onmiskenbare afzet telt): kort na een landing, tijdens en kort na een buk
@@ -400,13 +410,22 @@ export class GestureEngine {
       }
     }
 
+    // Hoogte-route (vangnet): al duidelijk boven de baseline met heupen én schouders, en nog stijgend.
+    // Vangt een afgevlakte afzet op waarvan de snelheid de drempel net niet haalt; rechtkomen uit een
+    // gebogen houding gaat trager dan 0.75 × de afzetdrempel en telt dus niet.
+    const highRise = dy > t.jumpEnter * h && dyShoulder > t.jumpEnter * h
+      && windowVelocity > t.jumpHighVelocity * riseThreshold * h && windowRise > t.jumpMinRise * h
+      && sinceLanding > t.landingStrict;
+
     const onGround = this.jumpState.kind === 'ground';
     const canJump = onGround && !this.ducking && this.duckRecoverSince === undefined;
-    if (canJump && time - this.lastJumpTime > t.jumpCooldown && (dip || fastTakeoff)) {
+    if (canJump && time - this.lastJumpTime > t.jumpCooldown && (dip || fastTakeoff || highRise)) {
       events.push(start('jump'));
-      this.lastJumpRoute = dip ? 'dip' : 'afzet';
+      this.lastJumpRoute = dip ? 'dip' : fastTakeoff ? 'afzet' : 'hoogte';
       this.lastJumpTime = time;
       this.jumpState = { kind: 'pending', since: time };
+    } else if (onGround && isHigh && sinceLanding > t.landingStrict) {
+      this.jumpState = { kind: 'airborne' };   // in de lucht zonder trigger (bv. heel traag rechtkomen): geen toets, wel de landing volgen
     }
 
     // Bukken: duidelijk dieper dan de dip vóór een sprong, en alleen op de grond.
@@ -438,6 +457,25 @@ export class GestureEngine {
       + ` dx=${f(dxRef / h, 3)} vX=${f(xVelocity / h, 2)} v1=${f(frameVelocity / h, 2)} lat=${this.lateral === 'moving' ? 1 : 0}`
       + ` state=${stateCode} duck=${this.ducking ? 1 : 0} strict=${strict ? 1 : 0} settled=${f(Math.min(time - this.lastSettledTime, 9.99), 2)}`
       + ` ev=${events.map(describe).join(',')}`;
+
+    // Automatische herkalibratie: sta je een tijdje stil terwijl de baseline duidelijk niet meer bij je past
+    // (dichter/verder van de camera, camera verplaatst, gaan zitten), dan meten we opnieuw. Dit zit buiten het
+    // bereik waarin de baseline hieronder zelf meebeweegt.
+    const still = !sideways && !this.ducking && speed < t.settleVelocity * h && Math.abs(xVelocity) < t.lateralStillVelocity * h;
+    const torsoDrift = Math.abs(m.torsoHeight - h) > t.recalibrateTorsoDrift * h;
+    const heightDrift = (dy > t.recalibrateHeightDrift * h && dyShoulder > t.recalibrateHeightDrift * h)
+      || (dy < -t.recalibrateHeightDrift * h && dyShoulder < -t.recalibrateHeightDrift * h);
+    // Stilstaan "in de lucht" kan niet: de baseline ligt dan te laag (vastgelopen na een gemiste landing).
+    const stuckAirborne = this.jumpState.kind === 'airborne';
+    if (still && (torsoDrift || heightDrift || stuckAirborne)) {
+      this.driftSince ??= time;
+      if (time - this.driftSince > t.recalibrateHold) {
+        this.startCalibration();
+        return events;
+      }
+    } else {
+      this.driftSince = undefined;
+    }
 
     // Baseline langzaam laten meebewegen wanneer je rustig in het midden staat
     // (vangt dichter/verder van de camera op).

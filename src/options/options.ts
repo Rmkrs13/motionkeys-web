@@ -7,7 +7,7 @@ import { ACTIONS } from '../engine/types';
 import type { Action } from '../engine/types';
 import { listCameras } from '../pose/camera';
 import { loadSettings, onSettingsChange, saveSettings } from '../settings';
-import type { KeyDelivery, Settings } from '../settings';
+import type { KeyDelivery, PanelMode, Settings } from '../settings';
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -113,6 +113,13 @@ for (const radio of deliveryRadios) {
   radio.addEventListener('change', () => void saveSettings({ keyDelivery: radio.value as KeyDelivery }));
 }
 
+// MARK: - Weergave
+
+const panelRadios = [...document.querySelectorAll<HTMLInputElement>('input[name=panel]')];
+for (const radio of panelRadios) {
+  radio.addEventListener('change', () => void saveSettings({ panelMode: radio.value as PanelMode }));
+}
+
 // MARK: - Render
 
 function render(): void {
@@ -138,6 +145,7 @@ function render(): void {
   }
   resetSensitivity.disabled = sensitivityEqual(settings.sensitivity, defaultSensitivity());
   for (const radio of deliveryRadios) radio.checked = radio.value === settings.keyDelivery;
+  for (const radio of panelRadios) radio.checked = radio.value === settings.panelMode;
   if (cameraSelect.value !== settings.cameraId) cameraSelect.value = settings.cameraId;
 }
 
