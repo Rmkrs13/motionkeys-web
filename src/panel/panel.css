@@ -48,6 +48,9 @@ body { padding: 10px 10px 24px; display: flex; flex-direction: column; gap: 10px
 .btn.primary { background: var(--green); min-width: 90px; }
 .btn.primary.stop { background: var(--red); }
 .btn.small { padding: 4px 10px; font-size: 11px; }
+.btn.icon { width: 32px; padding: 6px 0; text-align: center; font-size: 15px; }
+.btn.icon.on { background: rgba(255, 255, 255, 0.3); }
+.settings { display: flex; flex-direction: column; gap: 10px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #666; flex: none; }
 .dot.on { background: var(--green); }
 

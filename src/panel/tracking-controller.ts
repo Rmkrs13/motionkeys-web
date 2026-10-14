@@ -43,8 +43,6 @@ export class TrackingController {
     deliveryWarning: undefined, keyDelivery: 'content', stats: undefined,
   };
   onChange: () => void = () => {};
-  /// Vast gekozen doel-tabblad; undefined = automatisch (laatst actieve tab).
-  pinnedTabId: number | undefined;
 
   private settings: Settings | undefined;
   private mapping: KeyMapping | undefined;
@@ -57,7 +55,9 @@ export class TrackingController {
   private frameCounter = 0;
   private statsWindow = { since: 0, poseMs: 0 };
   private flashTimer: number | undefined;
-  private autoTabId: number | undefined;
+  /// Het actieve tabblad van het venster waarin dit zijpaneel open staat: daar gaan de toetsen heen.
+  private activeTabId: number | undefined;
+  private windowId: number | undefined;
   private readonly video: HTMLVideoElement;
 
   constructor(video: HTMLVideoElement) {
@@ -72,18 +72,12 @@ export class TrackingController {
       this.applySettings(s);
       if (cameraChanged && this.state.isTracking) void this.restartCamera();
     });
-    const session = await chrome.storage.session.get('lastGameTabId');
-    this.autoTabId = session['lastGameTabId'] as number | undefined;
-    chrome.storage.session.onChanged.addListener((changes) => {
-      if ('lastGameTabId' in changes) {
-        this.autoTabId = changes['lastGameTabId']?.newValue as number | undefined;
-        void this.updateTarget();
-      }
+    this.windowId = (await chrome.windows.getCurrent()).id;
+    chrome.tabs.onActivated.addListener(({ windowId }) => {
+      if (windowId === this.windowId) void this.updateTarget();
     });
-    chrome.tabs.onRemoved.addListener((tabId) => {
-      if (tabId === this.pinnedTabId) this.pinnedTabId = undefined;
-      if (tabId === this.autoTabId) this.autoTabId = undefined;
-      void this.updateTarget();
+    chrome.tabs.onUpdated.addListener((tabId, info) => {
+      if (tabId === this.activeTabId && info.url) void this.updateTarget();
     });
     void this.updateTarget();
   }
@@ -130,33 +124,24 @@ export class TrackingController {
   // MARK: - Doel-tabblad
 
   get targetTabId(): number | undefined {
-    return this.pinnedTabId ?? this.autoTabId;
-  }
-
-  async setPinnedTab(tabId: number | undefined): Promise<void> {
-    if (tabId !== this.targetTabId) {
-      this.releaseHeldKeys();
-      await this.sender?.dispose().then(() => this.setSender(this.state.keyDelivery));
-    }
-    this.pinnedTabId = tabId;
-    await this.updateTarget();
+    return this.activeTabId;
   }
 
   private async updateTarget(): Promise<void> {
-    const id = this.targetTabId;
+    const [tab] = await chrome.tabs.query({ active: true, windowId: this.windowId });
+    const id = tab?.id;
+    if (id !== this.activeTabId) {
+      // Ander tabblad: ingedrukte toetsen loslaten en de debugger (indien actief) opnieuw koppelen.
+      this.releaseHeldKeys();
+      this.activeTabId = id;
+      if (this.sender?.name === 'debugger') await this.sender.dispose().then(() => this.setSender(this.state.keyDelivery));
+    }
     if (this.sender) this.sender.tabId = id;
     let warning: string | undefined;
     if (id === undefined) {
-      warning = 'Geen spel-tabblad: klik in het tabblad met je spel of kies het hieronder.';
-    } else {
-      try {
-        const tab = await chrome.tabs.get(id);
-        if (tab.url && BLOCKED_URL.test(tab.url)) {
-          warning = 'Toetsen kunnen niet naar deze pagina (chrome://-pagina of Web Store). Open het spel op een gewone website.';
-        }
-      } catch {
-        warning = 'Spel-tabblad bestaat niet meer.';
-      }
+      warning = 'Geen actief tabblad gevonden.';
+    } else if (tab?.url && BLOCKED_URL.test(tab.url)) {
+      warning = 'Toetsen kunnen niet naar deze pagina (chrome://-pagina of Web Store). Open het spel op een gewone website.';
     }
     this.state.targetWarning = warning;
     this.onChange();

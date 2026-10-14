@@ -14,10 +14,10 @@ export class Thresholds {
   lateralStillVelocity = 0.3;        // in rust: referentie schuift traag mee met langzaam drijven (< 0.3 × romphoogte/s)
   lateralRefAlpha = 0.02;
   lateralStrict = 0.4;               // na een stap: zo lang geen buk-route "laag aanhouden" en strenge sprongdrempel (je stapt licht gebogen)
-  lateralVelocity = 0.35;            // óf: zijwaarts sneller dan 0.35 × romphoogte per seconde over de laatste 2 frames (vroege trigger)
-  lateralMinShift = 0.03;            // … en al minstens 0.03 × romphoogte uit de referentie
+  lateralVelocity = 0.5;             // óf: zijwaarts sneller dan 0.5 × romphoogte per seconde over de laatste 2 frames (vroege trigger; was 0.35 met Vision, MediaPipe geeft gladdere maar drijvende posities)
+  lateralMinShift = 0.06;            // … en al minstens 0.06 × romphoogte uit de referentie
   lateralMinShiftAirborne = 0.10;    // tijdens/vlak na een sprong: geen glitch-filter (een sprong is zelf explosief), wel iets meer verschuiving
-  lateralPriorVelocity = 0.2;        // … en het vorige frame bewoog al dezelfde kant op (> 0.2): een stap versnelt geleidelijk, een glitch springt uit stilstand
+  lateralPriorVelocity = 0.3;        // … en het vorige frame bewoog al dezelfde kant op (> 0.3): een stap versnelt geleidelijk, een glitch springt uit stilstand
   lateralSpike = 1.5;                // versnelling > 1.5 × romphoogte/s tussen twee frames = pose-glitch: dat frame en het volgende triggeren niet (echte stap ≤ 0.5)
   lateralReverseFrames = 2;          // omkeren tijdens een stap pas na zoveel frames bevestiging
   jumpEnter = 0.08;                  // heupen of schouders > 0.08 × romphoogte boven baseline → "in de lucht"

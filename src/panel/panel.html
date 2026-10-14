@@ -29,24 +29,23 @@
     <button id="recalibrate" class="btn" disabled title="Referentiepositie opnieuw meten (midden, heup- en romphoogte)">◎ Kalibreer</button>
     <span class="spacer"></span>
     <span id="dot" class="dot"></span>
+    <button id="settings-toggle" class="btn icon" title="Instellingen" aria-expanded="false">⚙</button>
   </div>
 
   <div id="target-warning" class="warning" hidden><span></span></div>
   <div id="delivery-warning" class="warning" hidden><span></span></div>
   <div id="error" class="warning" hidden><span></span><button id="open-camera-help" class="btn small" hidden>Hulp</button></div>
 
-  <details open>
-    <summary>Spel</summary>
-    <div class="row">
-      <select id="target" title="Tabblad dat de toetsen ontvangt"></select>
-    </div>
-    <label class="row check"><input type="checkbox" id="overlay-in-game"> Bewegingen tonen bovenaan in het spel</label>
-    <p class="hint">Toont SPRONG, ← LINKS, … kort bovenaan de pagina van het spel, ook in volledig scherm.</p>
-  </details>
-
+  <div id="settings" class="settings" hidden>
   <details open>
     <summary>Modus</summary>
     <select id="preset"></select>
+  </details>
+
+  <details open>
+    <summary>Spel</summary>
+    <label class="row check"><input type="checkbox" id="overlay-in-game"> Bewegingen tonen bovenaan in het spel</label>
+    <p class="hint">Toont SPRONG, ← LINKS, … kort bovenaan de pagina van het spel, ook in volledig scherm. De toetsen gaan altijd naar het actieve tabblad van dit venster.</p>
   </details>
 
   <details>
@@ -86,6 +85,7 @@
     <label class="row check"><input type="radio" name="delivery" value="debugger"> Betrouwbare toetsen (chrome.debugger)</label>
     <p class="hint">Echte toetsaanslagen (isTrusted) voor spellen die synthetische toetsen negeren. Chrome toont dan tijdens het tracken de balk "MotionKeys heeft foutopsporing gestart in deze browser".</p>
   </details>
+  </div>
 
   <script src="panel.js"></script>
 </body>

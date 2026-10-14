@@ -17,7 +17,8 @@ const cameraHelp = $<HTMLButtonElement>('open-camera-help');
 const toggleBtn = $<HTMLButtonElement>('toggle');
 const recalibrateBtn = $<HTMLButtonElement>('recalibrate');
 const dot = $<HTMLSpanElement>('dot');
-const targetSelect = $<HTMLSelectElement>('target');
+const settingsEl = $<HTMLDivElement>('settings');
+const settingsToggle = $<HTMLButtonElement>('settings-toggle');
 
 const controller = new TrackingController(video);
 
@@ -74,26 +75,15 @@ cameraHelp.addEventListener('click', () => {
   void chrome.tabs.create({ url: `chrome://settings/content/siteDetails?site=${encodeURIComponent(chrome.runtime.getURL('').slice(0, -1))}` });
 });
 
-// MARK: - Spel-tabblad
-
-async function refreshTargets(): Promise<void> {
-  const tabs = await chrome.tabs.query({ windowType: 'normal' });
-  const current = controller.pinnedTabId;
-  targetSelect.replaceChildren(new Option('Automatisch (actieve tabblad)', ''));
-  for (const tab of tabs) {
-    if (tab.id === undefined || tab.url?.startsWith('chrome-extension://')) continue;
-    targetSelect.append(new Option((tab.title || tab.url || `Tabblad ${tab.id}`).slice(0, 60), String(tab.id)));
-  }
-  targetSelect.value = current === undefined ? '' : String(current);
-  if (targetSelect.value !== (current === undefined ? '' : String(current))) targetSelect.value = '';
-}
-targetSelect.addEventListener('change', () => {
-  void controller.setPinnedTab(targetSelect.value ? Number(targetSelect.value) : undefined);
+// Instellingen alleen tonen via het tandwiel (onthouden per paneel).
+settingsToggle.addEventListener('click', () => {
+  const open = settingsEl.hidden;
+  settingsEl.hidden = !open;
+  settingsToggle.classList.toggle('on', open);
+  settingsToggle.setAttribute('aria-expanded', String(open));
+  try { localStorage.setItem('settingsOpen', open ? '1' : '0'); } catch { /* geen opslag */ }
 });
-targetSelect.addEventListener('focus', () => void refreshTargets());
-chrome.tabs.onRemoved.addListener(() => void refreshTargets());
-chrome.tabs.onUpdated.addListener((_id, info) => { if (info.title) void refreshTargets(); });
-void refreshTargets();
+try { if (localStorage.getItem('settingsOpen') === '1') settingsToggle.click(); } catch { /* geen opslag */ }
 
 void initSettingsUI();
 window.addEventListener('pagehide', () => { void controller.dispose(); });

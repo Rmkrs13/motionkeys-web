@@ -70,10 +70,3 @@ export function onSettingsChange(callback: (settings: Settings) => void): () => 
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);
 }
-
-// MARK: - Sessiestatus (background ↔ paneel)
-
-export const SESSION_KEYS = {
-  /// Laatst actieve tabblad in een gewoon browservenster: het standaard-doel voor toetsen.
-  lastGameTabId: 'lastGameTabId',
-} as const;

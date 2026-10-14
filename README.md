@@ -12,7 +12,7 @@ Chrome-extensie die via de webcam je lichaam volgt en toetsen stuurt naar een br
 
 Alles zit in het **zijpaneel van Chrome** (klik op het icoon): bovenaan het gespiegelde camerabeeld met groene dots
 op je gewrichten en de links/rechts-drempels (die met je meeschuiven), daaronder de bewegingstekst en de status,
-**Start/Stop** en **Kalibreer**, en alle instellingen. Het spel kan in volledig scherm terwijl het zijpaneel ernaast
+**Start/Stop** en **Kalibreer**; de instellingen verschijnen achter het tandwiel. Het spel kan in volledig scherm terwijl het zijpaneel ernaast
 blijft staan. De bewegingstekst (SPRONG, ← LINKS, …) verschijnt desgewenst ook kort bovenaan in het spel zelf
 (schakelaar *Bewegingen tonen bovenaan in het spel*).
 **Kalibreer** meet je referentiepositie opnieuw (midden, heuphoogte en romphoogte); bij Start, na verlies van tracking
@@ -52,8 +52,8 @@ Na een nieuwe build klik je daar op het herlaad-icoon van de extensie (anders bl
 3. Ga in het midden van het beeld staan en sta ±1 s stil (kalibratie).
 4. Stap opzij voor ←/→, spring voor spatie.
 
-De toetsen gaan standaard naar het **actieve tabblad** van het venster. Onder *Spel* kun je in plaats daarvan een
-vast tabblad kiezen. Het paneel waarschuwt als het doel een
+De toetsen gaan altijd naar het **actieve tabblad** van het venster waarin het zijpaneel open staat. Wissel je van
+tabblad, dan volgt de extensie mee (ingedrukte toetsen worden losgelaten). Het paneel waarschuwt als het doel een
 chrome://-pagina is of niet meer bestaat.
 
 ## Permissies
@@ -70,13 +70,13 @@ Toegankelijkheidsrechten (zoals de macOS-app nodig had) zijn niet nodig.
 
 ## Modi en toetsen
 
-In het zijpaneel kies je een modus (preset) of stel je per beweging de toets en de manier in:
+Achter het tandwiel in het zijpaneel kies je een modus (preset) of stel je per beweging de toets en de manier in:
 
 | Beweging | Herkenning |
 |---|---|
 | Springen | dip vóór de afzet (anticipatie) of snelle afzet (heupen/schouders > 1.5 romphoogte/s omhoog; strenger na een landing, buk of stap), of als vangnet de hoogte-route: heupen én schouders al > 0.08 romphoogte boven de baseline en nog stijgend met > 1.1 romphoogte/s |
 | Bukken | heupen of schouders > 0.4 × romphoogte onder de baseline, of > 0.3 gedurende 0,15 s (niet tijdens een stap of vlak na een landing) |
-| Stap links / rechts | zijwaartse beweging > 0.35 romphoogte/s die al in het vorige frame bezig was (geen glitch), of trage stap > 0.3 × romphoogte t.o.v. je laatste rustpositie; na elke stap wordt waar je stilstaat de nieuwe referentie, en een grote stap (≥ 0.9 romphoogte, een gewone stap is 0.3–0.8) telt als twee |
+| Stap links / rechts | zijwaartse beweging > 0.5 romphoogte/s die al in het vorige frame bezig was (geen glitch), of trage stap > 0.3 × romphoogte t.o.v. je laatste rustpositie; na elke stap wordt waar je stilstaat de nieuwe referentie, en een grote stap (≥ 0.9 romphoogte, een gewone stap is 0.3–0.8) telt als twee |
 
 - **Tik**: korte toetsaanslag (key down, 40 ms later key up) bij het begin van de beweging.
 - **Vasthouden**: toets ingedrukt zolang de beweging duurt (bukken in het dino-spel, of een stap opzij die je
@@ -99,7 +99,7 @@ In het zijpaneel kies je een modus (preset) of stel je per beweging de toets en 
 
 ## Camera kiezen
 
-Onder *Camera* in het zijpaneel staat een camerakeuze: automatisch (standaardcamera) of een USB-webcam. USB-camera's
+Onder *Camera* (tandwiel) staat een camerakeuze: automatisch (standaardcamera) of een USB-webcam. USB-camera's
 verschijnen zodra ze aangesloten zijn ("Vernieuwen" als dat niet vanzelf gebeurt; namen zijn pas zichtbaar nadat de
 camera één keer toegestaan is). Wisselen kan tijdens het tracken; de extensie kalibreert dan opnieuw. De extensie
 vraagt 640×480 en bij voorkeur 60 fps (minder vertraging).
@@ -147,7 +147,7 @@ hoe ver je van de camera staat:
 - `baselineAlpha` (0.03) / `baselineMaxShift` (0.35): de hoogte-baseline volgt in rust een gebogen speelhouding binnen 1–2 s, zodat die niet als buk telt.
 - `jumpEnter` (0.08): vanaf hoe hoog je als "in de lucht" geldt (voor de landingsdetectie).
 - `jumpVelocity` (1.5): hoe snel je heupen óf schouders moeten stijgen (gemeten over de laatste 2 frames, onafhankelijk van je startpositie) om bij de afzet te triggeren. Een echte afzet haalt 3–5 (gemeten), rechtkomen of een stap hooguit 1.7.
-- `lateralVelocity` (0.35), `lateralMinShift` (0.03) en `lateralPriorVelocity` (0.2): een zijwaartse beweging (2-frame venster) triggert al vóór je de `lateralEnter`-afstand haalt, mits het vorige frame al dezelfde kant op bewoog. `lateralSpike` (1.5): een versnelling groter dan dit tussen twee frames is een pose-glitch (echte stappen versnellen ≤ 0.5 per frame); dat frame en het volgende triggeren niet. Omkeren tijdens een stap wordt pas na `lateralReverseFrames` (2) frames aanvaard. Tijdens en 0,6 s na een sprong vervallen glitch-filter en "vorig frame"-eis (een sprong is zelf explosief) en geldt `lateralMinShiftAirborne` (0.10). Het middelpunt zelf is de mediaan van schouders, heupen, nek en bekken, zodat één verspringend gewricht weinig invloed heeft.
+- `lateralVelocity` (0.5), `lateralMinShift` (0.06) en `lateralPriorVelocity` (0.3) (met Vision op macOS was dat 0.35 / 0.03 / 0.2; MediaPipe geeft gladdere maar meer drijvende posities, dus iets strenger): een zijwaartse beweging (2-frame venster) triggert al vóór je de `lateralEnter`-afstand haalt, mits het vorige frame al dezelfde kant op bewoog. `lateralSpike` (1.5): een versnelling groter dan dit tussen twee frames is een pose-glitch (echte stappen versnellen ≤ 0.5 per frame); dat frame en het volgende triggeren niet. Omkeren tijdens een stap wordt pas na `lateralReverseFrames` (2) frames aanvaard. Tijdens en 0,6 s na een sprong vervallen glitch-filter en "vorig frame"-eis (een sprong is zelf explosief) en geldt `lateralMinShiftAirborne` (0.10). Het middelpunt zelf is de mediaan van schouders, heupen, nek en bekken, zodat één verspringend gewricht weinig invloed heeft.
 - `duckEnter` (0.4), `duckSlowEnter` (0.3) / `duckSlowHold` (0.15 s), `duckExit` (0.15): bukken (alleen actief met een toets). Tijdens een buk wordt geen sprong herkend, en na het rechtkomen pas weer zodra je stilstaat (`duckRecoverTimeout` 1 s als bovengrens). Zolang je opzij beweegt geldt `jumpVelocityAfterLanding`: een wippende stap is geen sprong.
 - `jumpCooldown` (0.25 s): minimale tijd tussen twee sprongen.
 - `jumpOnDip` (true): stuurt de spatie al bij de dip (door de knieën zakken) vlak vóór de afzet, ±150–250 ms eerder. Compenseert de cameravertraging. Nadeel: snel bukken telt ook als sprong. Zet op `false` om dit uit te schakelen.
@@ -182,7 +182,7 @@ src/
   keys/key-sender.ts          ContentScriptSender (chrome.tabs.sendMessage) en DebuggerSender (chrome.debugger)
   content.ts                  content script: dispatcht KeyboardEvents in het frame dat focus heeft; toont de bewegingstekst als popover
   settings.ts                 instellingen in chrome.storage.local, sessiestatus in chrome.storage.session
-  background.ts               service worker: zijpaneel aan het icoon koppelen, spel-tabblad onthouden, opruimen
+  background.ts               service worker: zijpaneel aan het icoon koppelen, debugger-koppelingen opruimen
   panel/                      zijpaneel: tracking-controller (camera → pose → engine → toetsen), overlay, UI, instellingen (settings-ui.ts)
 test/gesture-engine.test.ts   Vitest: kalibratie, sprong (afzet en dip), stappen, doorschuiven, glitch, bukken, body lost
 ```
