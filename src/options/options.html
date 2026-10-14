@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MotionKeys – Instellingen</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>MotionKeys – Instellingen</h1>
+
+    <section>
+      <h2>Camera</h2>
+      <div class="row">
+        <select id="camera"></select>
+        <button id="refresh-cameras" class="btn">Vernieuwen</button>
+      </div>
+      <p class="hint">USB-webcams verschijnen hier zodra ze aangesloten zijn. Een USB-camera met 60 fps heeft doorgaans minder vertraging dan de ingebouwde. Wisselen kan ook tijdens het tracken; de extensie kalibreert dan opnieuw. Namen verschijnen pas nadat je de camera één keer toegestaan hebt.</p>
+    </section>
+
+    <section>
+      <h2>Modus</h2>
+      <select id="preset"></select>
+    </section>
+
+    <section>
+      <h2>Toetsen per beweging</h2>
+      <div id="bindings"></div>
+      <p class="hint">Tik: korte toetsaanslag bij het begin van de beweging. Vasthouden: toets blijft ingedrukt zolang je de beweging aanhoudt (bv. bukken in het dino-spel).</p>
+    </section>
+
+    <section>
+      <h2>Springen</h2>
+      <label class="row"><input type="checkbox" id="anticipate"> Sprong anticiperen: toets al bij het zakken vóór de afzet</label>
+      <p class="hint" id="anticipate-hint"></p>
+    </section>
+
+    <section>
+      <h2>Gevoeligheid</h2>
+      <div id="sensitivity"></div>
+      <div class="row">
+        <p class="hint">100 % is de standaard, afgestemd op gemeten sprongen en stappen. Hoger reageert vroeger maar geeft sneller valse bewegingen.</p>
+        <button id="reset-sensitivity" class="btn">Standaard</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Toetslevering</h2>
+      <label class="row"><input type="radio" name="delivery" value="content"> Synthetische toetsen (standaard)</label>
+      <p class="hint">Via een content script; werkt voor de meeste browserspellen, zonder waarschuwingsbalk.</p>
+      <label class="row"><input type="radio" name="delivery" value="debugger"> Betrouwbare toetsen (via chrome.debugger)</label>
+      <p class="hint">Echte toetsaanslagen (isTrusted) voor spellen die synthetische toetsen negeren. Chrome vraagt eenmalig toestemming en toont tijdens het tracken de balk "MotionKeys heeft foutopsporing gestart in deze browser".</p>
+    </section>
+
+    <section>
+      <h2>Bukken</h2>
+      <p class="hint">Bukken telt zodra je heupen of schouders ruim een derde van je romphoogte zakken (dieper dan de dip vóór een sprong), of iets minder diep (0,3) maar dan minstens 0,15 s lang. Tijdens een buk en tot je na het rechtkomen even stilstaat, wordt geen sprong herkend. Zet de toets op "Geen" om bukken uit te schakelen.</p>
+    </section>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MotionKeys</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div id="stage" class="stage idle">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+
+    <div class="idle-layer">
+      <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><path fill="currentColor" d="M13.5 5.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3a7.2 7.2 0 0 0 5.5 2.5v-2a5.2 5.2 0 0 1-4.5-2.5l-1-1.6A2 2 0 0 0 11.8 6c-.3 0-.5 0-.8.1L5.8 8.3V13h2V9.6l2-.7z"/></svg>
+      <div>Tracking uit</div>
+    </div>
+
+    <div class="top">
+      <div id="flash" class="flash" hidden></div>
+      <div id="status" class="pill" hidden></div>
+      <div id="target-warning" class="warning" hidden><span></span></div>
+      <div id="delivery-warning" class="warning" hidden><span></span><button id="open-options-2" class="btn small">Instellingen</button></div>
+      <div id="error" class="warning" hidden><span></span><button id="open-camera-help" class="btn small" hidden>Hulp</button></div>
+    </div>
+
+    <div class="bottom">
+      <div class="bar">
+        <button id="toggle" class="btn primary">▶ Start</button>
+        <button id="recalibrate" class="btn" disabled title="Referentiepositie opnieuw meten (midden, heup- en romphoogte)">◎ Kalibreer</button>
+        <span class="spacer"></span>
+        <button id="pip" class="btn icon" title="Zwevend venster (altijd bovenop)" hidden>⧉</button>
+        <button id="open-options" class="btn icon" title="Instellingen: modus en toetsen per beweging">⚙</button>
+        <span id="dot" class="dot"></span>
+      </div>
+      <div class="bar">
+        <label class="target-label" for="target">Spel</label>
+        <select id="target" title="Tabblad dat de toetsen ontvangt"></select>
+      </div>
+    </div>
+  </div>
+  <script src="panel.js"></script>
+</body>
+</html>

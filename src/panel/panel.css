@@ -1,0 +1,83 @@
+:root {
+  color-scheme: dark;
+  --green: #34c759;
+  --red: #ff453a;
+  --bg: #000;
+  --overlay: rgba(0, 0, 0, 0.55);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  font-size: 13px;
+}
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: #fff; overflow: hidden; }
+body { display: flex; align-items: center; justify-content: center; }
+
+.stage {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg);
+  overflow: hidden;
+  user-select: none;
+}
+.stage video, .stage canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.stage video { object-fit: fill; transform: scaleX(-1); }   /* spiegelen zoals in Teams */
+.stage.idle video, .stage.idle canvas { visibility: hidden; }
+
+.idle-layer {
+  position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: rgba(255, 255, 255, 0.7); font-weight: 600; font-size: 15px;
+}
+.stage.idle .idle-layer { display: flex; }
+
+.top, .bottom {
+  position: absolute; left: 10px; right: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+}
+.top { top: 12px; }
+.bottom { bottom: 10px; align-items: stretch; transition: opacity 0.15s ease-out; }
+.top > *, .bottom > * { pointer-events: auto; }
+
+/* Knoppen alleen bij hoveren tijdens tracking (altijd zichtbaar als tracking uit staat). */
+.stage.tracking .bottom { opacity: 0; }
+.stage.tracking:hover .bottom, .stage.tracking:focus-within .bottom { opacity: 1; }
+
+.flash {
+  font-size: 34px; font-weight: 900; letter-spacing: 0.5px;
+  padding: 4px 14px; border-radius: 999px; background: rgba(52, 199, 89, 0.75);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+.pill {
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--overlay);
+}
+.warning {
+  display: flex; align-items: center; gap: 8px; max-width: 100%;
+  font-size: 11px; color: #000; padding: 6px 8px; border-radius: 8px; background: rgba(255, 214, 10, 0.92);
+}
+.warning::before { content: "⚠"; font-size: 14px; }
+.warning span { flex: 1; }
+
+.bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 10px; background: var(--overlay);
+}
+.spacer { flex: 1; }
+.btn {
+  appearance: none; border: 0; cursor: pointer; color: #fff; font: inherit; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.25); white-space: nowrap;
+}
+.btn:hover { background: rgba(255, 255, 255, 0.35); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.primary { background: var(--green); min-width: 84px; }
+.btn.primary.stop { background: var(--red); }
+.btn.icon { width: 30px; padding: 6px 0; text-align: center; }
+.btn.small { padding: 3px 8px; font-size: 11px; background: rgba(0, 0, 0, 0.7); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #888; flex: none; }
+.dot.on { background: var(--green); }
+
+.target-label { font-weight: 600; opacity: 0.8; }
+select {
+  flex: 1; min-width: 0; font: inherit; color: #fff; background: rgba(255, 255, 255, 0.15); border: 0; border-radius: 6px; padding: 4px 6px;
+}
+select option { color: #000; background: #fff; }

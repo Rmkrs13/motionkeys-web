@@ -1,5 +1,9 @@
-.build/
+node_modules/
+dist/
 build/
 .DS_Store
-*.xcodeproj
+# gedownload bij `npm run build` (zie build.mjs)
+public/wasm/
+public/models/
+.build/
 .swiftpm/
