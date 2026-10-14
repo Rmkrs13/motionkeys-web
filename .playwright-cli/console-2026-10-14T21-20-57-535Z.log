@@ -1,4 +1,0 @@
-[   14816ms] [LOG] I1014 21:21:12.350000 2191552 gl_context.cc:408] GL version: 3.0 (OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))), renderer: WebKit WebGL @ chrome-extension://fpcochoilfocdccopjmldmpijaapcglh/wasm/vision_wasm_internal.js:4908
-[   14817ms] [WARNING] W1014 21:21:12.351000 2191552 gl_context.cc:1135] OpenGL error checking is disabled @ chrome-extension://fpcochoilfocdccopjmldmpijaapcglh/wasm/vision_wasm_internal.js:8666
-[   14819ms] [LOG] Graph successfully started running. @ chrome-extension://fpcochoilfocdccopjmldmpijaapcglh/wasm/vision_wasm_internal.js:1336
-[   14822ms] [INFO] [MotionKeys] camera 640×480 @ 20 fps, pose op GPU @ chrome-extension://fpcochoilfocdccopjmldmpijaapcglh/panel.js:5695

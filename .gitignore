@@ -7,3 +7,4 @@ public/wasm/
 public/models/
 .build/
 .swiftpm/
+.playwright-cli/
