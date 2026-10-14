@@ -10,14 +10,13 @@ Chrome-extensie die via de webcam je lichaam volgt en toetsen stuurt naar een br
 | Stap naar links | ← (één tik; na elke stap wordt waar je stilstaat de nieuwe referentie) |
 | Stap naar rechts | → (idem) |
 
-Het paneel toont het gespiegelde camerabeeld, groene dots op je gewrichten, de links/rechts-drempels
-(die met je meeschuiven) en een boodschap bij elke beweging. Met **Start/Stop** zet je tracking aan of uit.
-**Kalibreer** meet je referentiepositie opnieuw (midden, heuphoogte en romphoogte); doe dat als je ergens
-anders bent gaan staan of als de drempellijnen niet meer rond je staan. Bij Start en na verlies van tracking
-gebeurt dit automatisch. Met **⧉** maak je van het paneel een zwevend venster dat altijd bovenop blijft
-(Document Picture-in-Picture), ook over een spel in volledig scherm. In de instellingen kun je het paneel ook als
-**zijpaneel van Chrome** laten openen (naast de pagina, in hetzelfde venster); in volledig scherm verbergt Chrome
-het zijpaneel, dus kies dan het zwevende venster.
+Alles zit in het **zijpaneel van Chrome** (klik op het icoon): bovenaan het gespiegelde camerabeeld met groene dots
+op je gewrichten en de links/rechts-drempels (die met je meeschuiven), daaronder de bewegingstekst en de status,
+**Start/Stop** en **Kalibreer**, en alle instellingen. Het spel kan in volledig scherm terwijl het zijpaneel ernaast
+blijft staan. De bewegingstekst (SPRONG, ← LINKS, …) verschijnt desgewenst ook kort bovenaan in het spel zelf
+(schakelaar *Bewegingen tonen bovenaan in het spel*).
+**Kalibreer** meet je referentiepositie opnieuw (midden, heuphoogte en romphoogte); bij Start, na verlies van tracking
+en als je stil buiten het bereik van de baseline staat gebeurt dit automatisch.
 
 Dit is de herschrijving van de macOS-app [Rmkrs13/motionkeys](https://github.com/Rmkrs13/motionkeys)
 (Swift, Vision, CGEvent) naar het web: pose-detectie met [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker/web_js)
@@ -42,18 +41,19 @@ npm run typecheck
 ```
 
 Daarna in Chrome: `chrome://extensions` → **Ontwikkelaarsmodus** aan → **Uitgepakte extensie laden** → kies de map `dist/`.
+Pin het icoon in de werkbalk; een klik opent het zijpaneel.
 Na een nieuwe build klik je daar op het herlaad-icoon van de extensie (anders blijft de oude service worker draaien). Vereist Chrome 116 of nieuwer (ook op Windows).
 
 ## Gebruik
 
 1. Open het spel in een gewoon tabblad en klik erin (zodat het de toetsen ontvangt).
-2. Klik op het MotionKeys-icoon in de werkbalk: het paneel opent in een apart venster. Klik **Start**;
+2. Klik op het MotionKeys-icoon in de werkbalk: het zijpaneel opent. Klik **Start**;
    Chrome vraagt één keer toestemming voor de camera.
 3. Ga in het midden van het beeld staan en sta ±1 s stil (kalibratie).
 4. Stap opzij voor ←/→, spring voor spatie.
 
-De toetsen gaan standaard naar het **laatst actieve tabblad** in een gewoon browservenster. Onderaan het
-paneel kun je in plaats daarvan een vast tabblad kiezen. Het paneel waarschuwt als het doel een
+De toetsen gaan standaard naar het **actieve tabblad** van het venster. Onder *Spel* kun je in plaats daarvan een
+vast tabblad kiezen. Het paneel waarschuwt als het doel een
 chrome://-pagina is of niet meer bestaat.
 
 ## Permissies
@@ -63,14 +63,14 @@ chrome://-pagina is of niet meer bestaat.
 | Camera | wordt gevraagd bij de eerste Start, in het paneelvenster |
 | `storage` | instellingen bewaren |
 | `tabs`, host `<all_urls>`, `scripting` | het spel-tabblad vinden en er het content script in laden dat de toetsen aflevert |
-| `sidePanel` | het paneel optioneel als zijpaneel openen |
+| `sidePanel` | het paneel in het zijpaneel van Chrome tonen |
 | `debugger` | voor **Betrouwbare toetsen**; Chrome laat deze permissie niet optioneel toe, dus ze staat vast in het manifest. Ze wordt alleen gebruikt als je die optie aanzet |
 
 Toegankelijkheidsrechten (zoals de macOS-app nodig had) zijn niet nodig.
 
 ## Modi en toetsen
 
-Klik op het tandwiel in het paneel. Daar kies je een modus (preset) of stel je per beweging de toets en de manier in:
+In het zijpaneel kies je een modus (preset) of stel je per beweging de toets en de manier in:
 
 | Beweging | Herkenning |
 |---|---|
@@ -92,13 +92,14 @@ Klik op het tandwiel in het paneel. Daar kies je een modus (preset) of stel je p
   (`Input.dispatchKeyEvent`): echte toetsaanslagen met `isTrusted === true`, maar Chrome toont dan tijdens het
   tracken de balk "MotionKeys heeft foutopsporing gestart in deze browser". Klik je daar op *Annuleren*, dan valt
   de extensie terug op synthetische toetsen.
-- **Weergave**: zwevend venster (standaard) of zijpaneel van Chrome.
-- Instellingen staan in `chrome.storage.local` (`keyMapping`, `sensitivity`, `cameraId`, `keyDelivery`, `panelMode`) en worden
+- **Bewegingen tonen bovenaan in het spel**: de bewegingstekst als popover (top layer, dus ook boven een spel in
+  volledig scherm) bovenaan de spelpagina, via het content script.
+- Instellingen staan in `chrome.storage.local` (`keyMapping`, `sensitivity`, `cameraId`, `keyDelivery`, `showOverlayInGame`) en worden
   live toegepast, ook terwijl je trackt.
 
 ## Camera kiezen
 
-In de instellingen staat bovenaan een camerakeuze: automatisch (standaardcamera) of een USB-webcam. USB-camera's
+Onder *Camera* in het zijpaneel staat een camerakeuze: automatisch (standaardcamera) of een USB-webcam. USB-camera's
 verschijnen zodra ze aangesloten zijn ("Vernieuwen" als dat niet vanzelf gebeurt; namen zijn pas zichtbaar nadat de
 camera één keer toegestaan is). Wisselen kan tijdens het tracken; de extensie kalibreert dan opnieuw. De extensie
 vraagt 640×480 en bij voorkeur 60 fps (minder vertraging).
@@ -167,8 +168,8 @@ In de console is `window.__motionkeys.controller` beschikbaar om te testen, bv.
 ## Structuur
 
 ```
-manifest.json                 MV3: paneel via actie-icoon, content script op <all_urls>, debugger-permissie
-build.mjs                     esbuild (4 bundels) + kopieert manifest, html/css, iconen, model en MediaPipe-WASM naar dist/
+manifest.json                 MV3: zijpaneel via actie-icoon, content script op <all_urls>, debugger-permissie
+build.mjs                     esbuild (3 bundels) + kopieert manifest, html/css, iconen, model en MediaPipe-WASM naar dist/
 public/icons/                 extensie-iconen
 public/models/                pose_landmarker_lite.task (gedownload bij de eerste build)
 src/
@@ -177,12 +178,11 @@ src/
   engine/key-mapping.ts       bewegingen, toetsen, tik/vasthouden, modi (presets), gevoeligheid
   pose/pose-detector.ts       MediaPipe Pose Landmarker → PoseFrame (y omgekeerd naar origin linksonder)
   pose/camera.ts              getUserMedia, camerakeuze
-  keys/key-codes.ts           toets → key/code/keyCode(/tekst), berichtformaat naar het content script
+  keys/key-codes.ts           toets → key/code/keyCode(/tekst), berichten naar het content script (toets, bewegingstekst)
   keys/key-sender.ts          ContentScriptSender (chrome.tabs.sendMessage) en DebuggerSender (chrome.debugger)
-  content.ts                  content script: dispatcht KeyboardEvents in het frame dat focus heeft
+  content.ts                  content script: dispatcht KeyboardEvents in het frame dat focus heeft; toont de bewegingstekst als popover
   settings.ts                 instellingen in chrome.storage.local, sessiestatus in chrome.storage.session
-  background.ts               service worker: paneelvenster openen, spel-tabblad onthouden, opruimen
-  panel/                      paneel: tracking-controller (camera → pose → engine → toetsen), overlay, UI
-  options/                    instellingenpagina
+  background.ts               service worker: zijpaneel aan het icoon koppelen, spel-tabblad onthouden, opruimen
+  panel/                      zijpaneel: tracking-controller (camera → pose → engine → toetsen), overlay, UI, instellingen (settings-ui.ts)
 test/gesture-engine.test.ts   Vitest: kalibratie, sprong (afzet en dip), stappen, doorschuiven, glitch, bukken, body lost
 ```

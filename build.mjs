@@ -28,7 +28,7 @@ async function copyStatic() {
   await cp('manifest.json', `${out}/manifest.json`);
   await cp('public', out, { recursive: true });
   await cp('node_modules/@mediapipe/tasks-vision/wasm', `${out}/wasm`, { recursive: true });
-  for (const f of ['src/panel/panel.html', 'src/panel/panel.css', 'src/options/options.html', 'src/options/options.css']) {
+  for (const f of ['src/panel/panel.html', 'src/panel/panel.css']) {
     await cp(f, `${out}/${path.basename(f)}`);
   }
 }
@@ -51,7 +51,6 @@ await ensureModel();
 const ctx = await esbuild.context({
   entryPoints: {
     panel: 'src/panel/panel.ts',
-    options: 'src/options/options.ts',
     background: 'src/background.ts',
     content: 'src/content.ts',
   },

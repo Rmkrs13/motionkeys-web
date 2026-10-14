@@ -4,16 +4,14 @@ import type { ActionBinding, KeyMapping, Sensitivity } from './engine/key-mappin
 /// Hoe toetsen bij het spel aankomen: synthetische KeyboardEvents via het content script, of echte toetsen via chrome.debugger.
 export type KeyDelivery = 'content' | 'debugger';
 
-/// Waar het paneel opent: eigen zwevend venster, of het zijpaneel van Chrome.
-export type PanelMode = 'window' | 'sidepanel';
-
 export interface Settings {
   mapping: KeyMapping;
   sensitivity: Sensitivity;
   /// deviceId van de gekozen camera; leeg = standaardcamera.
   cameraId: string;
   keyDelivery: KeyDelivery;
-  panelMode: PanelMode;
+  /// Bewegingstekst (SPRONG, ← LINKS, …) ook bovenaan in het spel-tabblad tonen.
+  showOverlayInGame: boolean;
 }
 
 export const defaultSettings = (): Settings => ({
@@ -21,10 +19,10 @@ export const defaultSettings = (): Settings => ({
   sensitivity: defaultSensitivity(),
   cameraId: '',
   keyDelivery: 'content',
-  panelMode: 'window',
+  showOverlayInGame: true,
 });
 
-const KEYS: (keyof Settings)[] = ['mapping', 'sensitivity', 'cameraId', 'keyDelivery', 'panelMode'];
+const KEYS: (keyof Settings)[] = ['mapping', 'sensitivity', 'cameraId', 'keyDelivery', 'showOverlayInGame'];
 
 function sanitizeBinding(raw: unknown, fallback: ActionBinding): ActionBinding {
   const r = raw as Partial<ActionBinding> | undefined;
@@ -51,7 +49,7 @@ function sanitize(raw: Partial<Record<keyof Settings, unknown>>): Settings {
     sensitivity: { jump: clamp(s.jump, 1), duck: clamp(s.duck, 1), lateral: clamp(s.lateral, 1) },
     cameraId: typeof raw.cameraId === 'string' ? raw.cameraId : '',
     keyDelivery: raw.keyDelivery === 'debugger' ? 'debugger' : 'content',
-    panelMode: raw.panelMode === 'sidepanel' ? 'sidepanel' : 'window',
+    showOverlayInGame: typeof raw.showOverlayInGame === 'boolean' ? raw.showOverlayInGame : true,
   };
 }
 
@@ -76,8 +74,6 @@ export function onSettingsChange(callback: (settings: Settings) => void): () => 
 // MARK: - Sessiestatus (background ↔ paneel)
 
 export const SESSION_KEYS = {
-  /// Venster-id van het geopende paneel.
-  panelWindowId: 'panelWindowId',
   /// Laatst actieve tabblad in een gewoon browservenster: het standaard-doel voor toetsen.
   lastGameTabId: 'lastGameTabId',
 } as const;

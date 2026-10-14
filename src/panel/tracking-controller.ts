@@ -4,7 +4,7 @@ import { actionFlash, duckEnabled, effectiveAnticipateJump } from '../engine/key
 import type { KeyMapping } from '../engine/key-mapping';
 import { describe } from '../engine/types';
 import type { EngineStatus, GestureEvent, Joints, LateralState } from '../engine/types';
-import { keyInfo } from '../keys/key-codes';
+import { keyInfo, sendToTab } from '../keys/key-codes';
 import type { KeyInfo } from '../keys/key-codes';
 import { ContentScriptSender, DebuggerSender } from '../keys/key-sender';
 import type { KeySender } from '../keys/key-sender';
@@ -299,7 +299,12 @@ export class TrackingController {
   }
 
   private showFlash(action: GestureEvent['action']): void {
-    this.state.flash = actionFlash[action];
+    const text = actionFlash[action];
+    const tabId = this.targetTabId;
+    if (this.settings?.showOverlayInGame && tabId !== undefined && !this.state.targetWarning) {
+      sendToTab(tabId, { type: 'motionkeys-flash', text }).catch(() => { /* tabblad weg of geblokkeerd */ });
+    }
+    this.state.flash = text;
     if (this.flashTimer !== undefined) clearTimeout(this.flashTimer);
     this.flashTimer = window.setTimeout(() => { this.state.flash = undefined; this.onChange(); }, 600);
   }

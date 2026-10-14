@@ -40,3 +40,24 @@ export interface KeyMessage {
 
 export const isKeyMessage = (m: unknown): m is KeyMessage =>
   typeof m === 'object' && m !== null && (m as KeyMessage).type === 'motionkeys-key';
+
+/// Bericht van het paneel naar het content script: bewegingstekst bovenaan in het spel tonen.
+export interface FlashMessage {
+  type: 'motionkeys-flash';
+  text: string;
+}
+
+export const isFlashMessage = (m: unknown): m is FlashMessage =>
+  typeof m === 'object' && m !== null && (m as FlashMessage).type === 'motionkeys-flash';
+
+/// Stuurt een bericht naar (alle frames van) een tabblad; laadt het content script alsnog als het er nog niet zit
+/// (tabblad stond al open vóór de extensie geïnstalleerd werd).
+export async function sendToTab(tabId: number, message: KeyMessage | FlashMessage): Promise<void> {
+  try {
+    await chrome.tabs.sendMessage(tabId, message);
+  } catch (error) {
+    if (!/Receiving end does not exist|Could not establish connection/.test(String((error as Error).message))) throw error;
+    await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
+    await chrome.tabs.sendMessage(tabId, message);
+  }
+}

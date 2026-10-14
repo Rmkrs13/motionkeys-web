@@ -1,3 +1,4 @@
+import { sendToTab } from './key-codes';
 import type { KeyInfo, KeyMessage } from './key-codes';
 
 /// Stuurt toetsen naar het spel-tabblad. Tik: key down, ~40 ms later key up
@@ -43,14 +44,7 @@ export class ContentScriptSender extends BaseSender {
     const tabId = this.tabId;
     if (tabId === undefined) return;
     const message: KeyMessage = { type: 'motionkeys-key', phase: down ? 'down' : 'up', key: key.key, code: key.code, keyCode: key.keyCode };
-    try {
-      await chrome.tabs.sendMessage(tabId, message);
-    } catch (error) {
-      // Tabblad stond al open vóór de extensie geïnstalleerd werd: content script alsnog injecteren.
-      if (!/Receiving end does not exist|Could not establish connection/.test(String((error as Error).message))) throw error;
-      await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
-      await chrome.tabs.sendMessage(tabId, message);
-    }
+    await sendToTab(tabId, message);
   }
 }
 

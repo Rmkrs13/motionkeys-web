@@ -1,38 +1,8 @@
-// Service worker: opent het paneelvenster, houdt bij welk tabblad het spel is en ruimt op als het paneel sluit.
-import { loadSettings, onSettingsChange, SESSION_KEYS } from './settings';
+// Service worker: opent het zijpaneel bij een klik op het icoon, houdt bij welk tabblad het spel is
+// en ruimt debugger-koppelingen op bij het opstarten.
+import { SESSION_KEYS } from './settings';
 
-const PANEL_WIDTH = 420;
-const PANEL_HEIGHT = 360;
-
-async function getPanelWindowId(): Promise<number | undefined> {
-  const stored = await chrome.storage.session.get(SESSION_KEYS.panelWindowId);
-  const id = stored[SESSION_KEYS.panelWindowId] as number | undefined;
-  if (id === undefined) return undefined;
-  try {
-    await chrome.windows.get(id);
-    return id;
-  } catch {
-    await chrome.storage.session.remove(SESSION_KEYS.panelWindowId);
-    return undefined;
-  }
-}
-
-async function openPanel(): Promise<void> {
-  const existing = await getPanelWindowId();
-  if (existing !== undefined) {
-    await chrome.windows.update(existing, { focused: true });
-    return;
-  }
-  const win = await chrome.windows.create({
-    url: chrome.runtime.getURL('panel.html'),
-    type: 'popup',
-    width: PANEL_WIDTH,
-    height: PANEL_HEIGHT,
-  });
-  if (win?.id !== undefined) await chrome.storage.session.set({ [SESSION_KEYS.panelWindowId]: win.id });
-}
-
-/// Onthoud het actieve tabblad van het laatst gefocuste gewone venster (niet het paneel zelf).
+/// Onthoud het actieve tabblad van het laatst gefocuste gewone venster: het standaard-doel voor toetsen.
 async function rememberGameTab(windowId: number): Promise<void> {
   if (windowId === chrome.windows.WINDOW_ID_NONE) return;
   try {
@@ -43,7 +13,7 @@ async function rememberGameTab(windowId: number): Promise<void> {
   } catch { /* venster al weg */ }
 }
 
-/// Debugger-koppelingen die het paneel niet meer kon opruimen (venster hard gesloten).
+/// Debugger-koppelingen die het paneel niet meer kon opruimen (browser hard gesloten).
 async function detachAllDebuggers(): Promise<void> {
   const targets = await chrome.debugger.getTargets();
   for (const t of targets) {
@@ -53,33 +23,14 @@ async function detachAllDebuggers(): Promise<void> {
   }
 }
 
-/// Zijpaneel-modus: Chrome opent het zijpaneel zelf bij een klik op het icoon; anders openen wij het venster.
-async function applyPanelMode(): Promise<void> {
-  const { panelMode } = await loadSettings();
-  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: panelMode === 'sidepanel' });
-  console.debug('[MotionKeys] paneelmodus:', panelMode);
+function setup(): void {
+  void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  void chrome.windows.getLastFocused({ windowTypes: ['normal'] }).then((w) => { if (w.id !== undefined) void rememberGameTab(w.id); });
 }
-void applyPanelMode();
-onSettingsChange(() => { void applyPanelMode().catch((e) => console.error('[MotionKeys] paneelmodus instellen mislukt', e)); });
 
-chrome.action.onClicked.addListener(() => {
-  void loadSettings().then((s) => { if (s.panelMode === 'window') return openPanel(); });
-});
+chrome.runtime.onInstalled.addListener(() => { setup(); void detachAllDebuggers(); });
+chrome.runtime.onStartup.addListener(() => { setup(); void detachAllDebuggers(); });
+setup();
 
 chrome.tabs.onActivated.addListener(({ windowId }) => { void rememberGameTab(windowId); });
 chrome.windows.onFocusChanged.addListener((windowId) => { void rememberGameTab(windowId); });
-
-chrome.windows.onRemoved.addListener((windowId) => {
-  void (async () => {
-    const stored = await chrome.storage.session.get(SESSION_KEYS.panelWindowId);
-    if (stored[SESSION_KEYS.panelWindowId] === windowId) {
-      await chrome.storage.session.remove(SESSION_KEYS.panelWindowId);
-      await detachAllDebuggers();
-    }
-  })();
-});
-
-chrome.runtime.onInstalled.addListener(() => {
-  // Bij (her)installatie het huidige tabblad als startdoel nemen.
-  void chrome.windows.getLastFocused({ windowTypes: ['normal'] }).then((w) => { if (w.id !== undefined) void rememberGameTab(w.id); });
-});
