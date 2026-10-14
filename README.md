@@ -61,7 +61,7 @@ chrome://-pagina is of niet meer bestaat.
 | Camera | wordt gevraagd bij de eerste Start, in het paneelvenster |
 | `storage` | instellingen bewaren |
 | `tabs`, host `<all_urls>`, `scripting` | het spel-tabblad vinden en er het content script in laden dat de toetsen aflevert |
-| `debugger` (optioneel) | alleen als je **Betrouwbare toetsen** aanzet; Chrome vraagt dit apart |
+| `debugger` | voor **Betrouwbare toetsen**; Chrome laat deze permissie niet optioneel toe, dus ze staat vast in het manifest. Ze wordt alleen gebruikt als je die optie aanzet |
 
 Toegankelijkheidsrechten (zoals de macOS-app nodig had) zijn niet nodig.
 
@@ -133,7 +133,7 @@ In de console is `window.__motionkeys.controller` beschikbaar om te testen, bv.
 ## Structuur
 
 ```
-manifest.json                 MV3: paneel via actie-icoon, content script op <all_urls>, optionele debugger-permissie
+manifest.json                 MV3: paneel via actie-icoon, content script op <all_urls>, debugger-permissie
 build.mjs                     esbuild (4 bundels) + kopieert manifest, html/css, iconen, model en MediaPipe-WASM naar dist/
 public/icons/                 extensie-iconen
 public/models/                pose_landmarker_lite.task (gedownload bij de eerste build)

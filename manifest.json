@@ -22,8 +22,7 @@
     "service_worker": "background.js"
   },
   "options_page": "options.html",
-  "permissions": ["storage", "tabs", "scripting"],
-  "optional_permissions": ["debugger"],
+  "permissions": ["storage", "tabs", "scripting", "debugger"],
   "host_permissions": ["<all_urls>"],
   "content_scripts": [
     {

@@ -45,8 +45,6 @@ async function rememberGameTab(windowId: number): Promise<void> {
 
 /// Debugger-koppelingen die het paneel niet meer kon opruimen (venster hard gesloten).
 async function detachAllDebuggers(): Promise<void> {
-  const granted = await chrome.permissions.contains({ permissions: ['debugger'] });
-  if (!granted) return;
   const targets = await chrome.debugger.getTargets();
   for (const t of targets) {
     if (t.attached && t.tabId !== undefined) {

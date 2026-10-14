@@ -110,19 +110,13 @@ export class TrackingController {
       this.onChange();
     };
     if (delivery === 'debugger') {
-      const granted = await chrome.permissions.contains({ permissions: ['debugger'] });
-      if (!granted) {
-        this.state.deliveryWarning = 'Geen toestemming voor betrouwbare toetsen; synthetische toetsen worden gebruikt.';
-        this.sender = new ContentScriptSender(onError);
-      } else {
-        this.sender = new DebuggerSender(onError, (reason) => {
-          // Gebruiker klikte "Annuleren" in de debug-balk, of het tabblad sloot: terug naar het content script.
-          if (reason === 'canceled_by_user') {
-            this.state.deliveryWarning = 'Debugger losgekoppeld; synthetische toetsen worden gebruikt. Herstart tracking voor betrouwbare toetsen.';
-            void this.setSender('content');
-          }
-        });
-      }
+      this.sender = new DebuggerSender(onError, (reason) => {
+        // Gebruiker klikte "Annuleren" in de debug-balk, of het tabblad sloot: terug naar het content script.
+        if (reason === 'canceled_by_user') {
+          this.state.deliveryWarning = 'Debugger losgekoppeld; synthetische toetsen worden gebruikt. Herstart tracking voor betrouwbare toetsen.';
+          void this.setSender('content');
+        }
+      });
     } else {
       this.sender = new ContentScriptSender(onError);
     }

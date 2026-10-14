@@ -110,17 +110,7 @@ resetSensitivity.addEventListener('click', () => void saveSettings({ sensitivity
 
 const deliveryRadios = [...document.querySelectorAll<HTMLInputElement>('input[name=delivery]')];
 for (const radio of deliveryRadios) {
-  radio.addEventListener('change', async () => {
-    const value = radio.value as KeyDelivery;
-    if (value === 'debugger') {
-      const granted = await chrome.permissions.request({ permissions: ['debugger'] });
-      if (!granted) { render(); return; }
-    } else {
-      // Permissie weer inleveren zodat de debug-balk nooit meer kan verschijnen.
-      await chrome.permissions.remove({ permissions: ['debugger'] }).catch(() => false);
-    }
-    await saveSettings({ keyDelivery: value });
-  });
+  radio.addEventListener('change', () => void saveSettings({ keyDelivery: radio.value as KeyDelivery }));
 }
 
 // MARK: - Render

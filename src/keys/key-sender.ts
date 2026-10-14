@@ -108,7 +108,7 @@ export class DebuggerSender extends BaseSender {
   }
 
   override async dispose(): Promise<void> {
-    try { chrome.debugger?.onDetach.removeListener(this.handleDetach); } catch { /* permissie al ingeleverd */ }
+    chrome.debugger.onDetach.removeListener(this.handleDetach);
     await this.detach();
   }
 }
